@@ -8,27 +8,23 @@ public class Interact : MonoBehaviour {
     public Camera cam;
     private Ray ray;
     private RaycastHit hit;
-    private LayerMask layerMask;
-    private GameObject interactHit;
+    public LayerMask layerMask;
+    public GameObject interactHit;
     public Text interactionText;
 
-    public static AudioClip getAudio;
-    public static AudioClip pushAudio;
-    public static AudioClip animateKeyAudio;
+    public AudioSource getAudio;
+    public AudioSource pushAudio;
+    public AudioSource animateKeyAudio;
 
-    public AudioClip get;
-    public AudioClip push;
-    public AudioClip animatekey;
+    public Image bookPageContainer;
 
-    public AudioSource player;
-
+    [HideInInspector]
     public Camera playerCamera;
 
     // Use this for initialization
     void Start () {
-        getAudio = get;
-        pushAudio = push;
-        animateKeyAudio = animatekey;
+        if (bookPageContainer)
+            bookPageContainer.gameObject.SetActive(false);
         layerMask = LayerMask.GetMask("Interactable");
         interactionText.enabled = false;
         playerCamera = GetComponentInChildren<Camera>();
@@ -45,18 +41,20 @@ public class Interact : MonoBehaviour {
             //Debug.Log("here");
             if (Input.GetKeyDown(KeyCode.E))
             {
+                if (bookPageContainer)
+                    bookPageContainer.gameObject.SetActive(false);
+
                 //Debug.Log("key down");
                 interactHit = hit.transform.gameObject;
                 int useState = (int)(interactHit.GetComponent<Interacted>().state);
 
-                interactHit.AddComponent<AudioSource>();
-                player = interactHit.GetComponent<AudioSource>();
-
                 if (useState == 0)
                 {
-                    if (!interactHit.CompareTag("key")) player.PlayOneShot(getAudio);
-                    else player.PlayOneShot(animateKeyAudio);
-                    interactHit.GetComponent<Interacted>().GetInteracted();
+                    if (!interactHit.CompareTag("key"))
+                        getAudio.Play();
+                    else
+                        animateKeyAudio.Play();
+                        interactHit.GetComponent<Interacted>().GetInteracted();
                 }
                 else if (useState == 1)
                 {
@@ -64,6 +62,7 @@ public class Interact : MonoBehaviour {
                 }
                 if (useState == 2)
                 {
+                    pushAudio.Play();
                     interactHit.GetComponent<Interacted>().Push();
                 }
             }

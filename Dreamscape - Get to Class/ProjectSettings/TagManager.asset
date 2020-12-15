@@ -22,6 +22,10 @@ TagManager:
   - swiper
   - doorToScene
   - finalDoor
+  - desk reset
+  - openableBook
+  - Candles
+  - DeskCube
   layers:
   - Default
   - TransparentFX

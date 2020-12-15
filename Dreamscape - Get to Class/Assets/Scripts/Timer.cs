@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityStandardAssets.Characters.FirstPerson;
+using UnityEngine.SceneManagement;
 
 public class Timer : MonoBehaviour {
 
@@ -13,7 +14,7 @@ public class Timer : MonoBehaviour {
     public GameObject player;
     // Use this for initialization
     void Start () {
-        timeLeft = 180;
+        timeLeft = 600;
 	}
 	
 	// Update is called once per frame
@@ -36,5 +37,15 @@ public class Timer : MonoBehaviour {
         Time.timeScale = 0;
         player.GetComponent<FirstPersonController>().LockMouse();
         Debug.Log("Called Game Over");
+        StartCoroutine(WaitSeconds());
+        SceneManager.LoadScene(0);
+        Time.timeScale = 1;
+        player.GetComponent<FirstPersonController>().UnlockMouse();
+    }
+
+    public IEnumerator WaitSeconds()
+    {
+        yield return new WaitForSeconds(5);
+
     }
 }

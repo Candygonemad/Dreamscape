@@ -21,10 +21,22 @@ public class Interacted : MonoBehaviour {
     public GameObject door;
     public Text winText;
     public GameObject player;
+    public Image bookPageContainer;
+    public Sprite bookPage;
+    public ParticleSystem[] candleFlames;
     [HideInInspector]
     public static bool doorActivated;
+    private Image[] keyInventoryImageContainers;
+    public Sprite thisKeyImage;
 
-    AudioSource thisObject;
+    private float smoothness;
+    private bool smooth;
+    public Material deskCube;
+
+    private bool bookOpened;
+    private bool book;
+
+    //AudioSource thisObject;
 
     public enum UseState
     {
@@ -34,17 +46,46 @@ public class Interacted : MonoBehaviour {
     public UseState state;
 	// Use this for initialization
 	void Start () {
+        keyInventoryImageContainers = new Image[3];
+        GameObject keysUI = GameObject.Find("Keys");
+        for (int i = 0; i < keysUI.transform.childCount; i++)
+        {
+            keyInventoryImageContainers[i] = keysUI.transform.GetChild(i).GetComponent<Image>();
+            keysUI.transform.GetChild(i).GetComponent<Image>().enabled = false;
+        }
+
+        smooth = true;
+        smoothness = 1.0f;
+        bookOpened = false;
         bookInPlace = false;
         handsInPlace = false;
         gameObject.AddComponent<AudioSource>();
-        thisObject = gameObject.GetComponent<AudioSource>();
+        //thisObject = gameObject.GetComponent<AudioSource>();
         winText.enabled = false;
     }
 	
 	// Update is called once per frame
 	void Update () {
-		
-	}
+        if (deskCube)
+        {
+            deskCube.SetFloat("_Glossiness", smoothness);
+            if (smooth && smoothness < 1.0)
+            {
+                smoothness += 0.05f;
+            }
+            else if (!smooth && smoothness > 0.0)
+            {
+                smoothness -= 0.05f;
+            }
+            else
+            {
+                if (smooth)
+                    smoothness = 1;
+                else
+                    smoothness = 0;
+            }
+        }
+    }
 
 
     public void GetInteracted()
@@ -57,7 +98,7 @@ public class Interacted : MonoBehaviour {
         }
 
         //Test if the hands are the object being interacted with
-        if(CompareTag("clock hands"))
+        if (CompareTag("clock hands"))
         {
             ItemCollector.handsCollected = true;
             Debug.Log(ItemCollector.handsCollected);
@@ -65,6 +106,8 @@ public class Interacted : MonoBehaviour {
 
         if (CompareTag("key"))
         {
+            keyInventoryImageContainers[ItemCollector.keysFound].enabled = true;
+            keyInventoryImageContainers[ItemCollector.keysFound].sprite = thisKeyImage;
             ItemCollector.keysFound++;
         }
 
@@ -91,7 +134,7 @@ public class Interacted : MonoBehaviour {
             bookInPlace = true;
             missingBook.SetActive(true);
             moveDown.SetBool("bookInPlace", true);
-            StartCoroutine(WaitFiveSeconds());
+            StartCoroutine(WaitSeconds());
         }
 
         if(CompareTag("finalDoor") && ItemCollector.keysFound == 3)
@@ -99,6 +142,24 @@ public class Interacted : MonoBehaviour {
             doorSwing.SetBool("allKeys", true);
         }
 
+        if (CompareTag("DeskCube"))
+        {
+            if (smooth)
+                smooth = false;
+            else
+                smooth = true;
+        }
+
+        if (CompareTag("Candles"))
+        {
+            for (int i = 0; i < candleFlames.Length; i++)
+            {
+                if (candleFlames[i].enableEmission)
+                    candleFlames[i].enableEmission = false;
+                else
+                    candleFlames[i].enableEmission = true;
+            }
+        }
 
         Debug.Log("Animated");
     }
@@ -107,6 +168,29 @@ public class Interacted : MonoBehaviour {
     {
         //Debug.Log("Pushed");
 
+        //Tests if an openable book is the object being interacted with
+        if (CompareTag("openableBook"))
+        {
+            bookOpened = !bookOpened;
+            if(bookOpened)
+            {
+                bookPageContainer.gameObject.SetActive(true);
+                bookPageContainer.sprite = bookPage;
+
+                bookOpened = true;
+                Time.timeScale = 0;
+                player.GetComponent<FirstPersonController>().LockMouse();
+            }
+            else
+            {
+                Time.timeScale = 1;
+                player.GetComponent<FirstPersonController>().UnlockMouse();
+                bookPageContainer.gameObject.SetActive(false);
+                bookOpened = false;
+            }
+            // display the page to the image display
+            
+        }
 
         if (CompareTag("desk"))
         {
@@ -114,15 +198,18 @@ public class Interacted : MonoBehaviour {
             bool interactable = !transform.GetChild(DeskPuzzle.spotLightIndex).gameObject.active;
             if (interactable)
             {
-                thisObject.PlayOneShot(Interact.pushAudio);
                 DeskPuzzle.ToggleLights(DeskPuzzle.desks.IndexOf(gameObject));
             }
+        }
+
+        if (CompareTag("desk reset"))
+        {
+            DeskPuzzle.Reset();
         }
 
         //Tests if the clock is being interacted with and the hands are collected
         if(CompareTag("grandfather clock") && ItemCollector.handsCollected == true)
         {
-            thisObject.PlayOneShot(Interact.pushAudio);
             handsInPlace = true;
             missingHands.SetActive(true);
             moveUp.SetBool("handsInPlace", true);
@@ -130,20 +217,17 @@ public class Interacted : MonoBehaviour {
 
         if (CompareTag("buttons"))
         {
-            thisObject.PlayOneShot(Interact.pushAudio);
             int index = panel.GetComponent<PanelScript>().buttons.IndexOf(gameObject);
             panel.GetComponent<PanelScript>().PushButton(index);
         }
 
         if (CompareTag("swiper") && ItemCollector.keyCardCollected)
         {
-            thisObject.PlayOneShot(Interact.pushAudio);
             doorActivated = true;
         }
 
         if (CompareTag("doorToScene") && doorActivated)
         {
-            thisObject.PlayOneShot(Interact.pushAudio);
             gameObject.GetComponent<DoorToScene>().ChangeScene();
         }
 
@@ -153,10 +237,12 @@ public class Interacted : MonoBehaviour {
             Time.timeScale = 0;
             player.GetComponent<FirstPersonController>().LockMouse();
             winText.enabled = true;
+            StartCoroutine(WaitSeconds());
+            Application.Quit();
         }
     }
 
-    public IEnumerator WaitFiveSeconds()
+    public IEnumerator WaitSeconds()
     {
         yield return new WaitForSeconds(2);
         gameObject.SetActive(false);

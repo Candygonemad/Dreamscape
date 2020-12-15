@@ -17,6 +17,7 @@ public class DeskPuzzle : MonoBehaviour {
     public GameObject desk9;
     public static GameObject key;
     public GameObject keyInitializer;
+    private static int lightsOn;
 
     public static Animator keyFall;
     public Animator keyFallInitializer;
@@ -55,6 +56,24 @@ public class DeskPuzzle : MonoBehaviour {
         }
         desks[4].transform.GetChild(spotLightIndex).gameObject.SetActive(true);
         puzzleStarted = true;
+    }
+
+    public static void Reset()
+    {
+        if (lightsOn != 9)
+        {
+            for (int i = 0; i < desks.Count; i++)
+            {
+                if (i == 4)
+                {
+                    desks[i].transform.GetChild(spotLightIndex).gameObject.SetActive(false);
+                }
+                else
+                {
+                    desks[i].transform.GetChild(spotLightIndex).gameObject.SetActive(true);
+                }
+            }
+        }
     }
 
     public static void ToggleLights(int index)
@@ -124,7 +143,7 @@ public class DeskPuzzle : MonoBehaviour {
             }
         }
 
-        int lightsOn = 0;
+        lightsOn = 0;
         for (int i = 0; i < desks.Count; i++)
         {
             if (desks[i].transform.GetChild(spotLightIndex).gameObject.active)
